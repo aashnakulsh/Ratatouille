@@ -15,6 +15,7 @@ async def process_file(
     recipeNum: int = Form(...),
     step: int = Form(...)
 ):
+    global latest_result
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
         shutil.copyfileobj(image.file, tmp)
         tmp_path = tmp.name
@@ -25,6 +26,7 @@ async def process_file(
     prompt = recipe.run_step(step)
     result_text = prompt_gpt.prompt_gpt(prompt, tmp_path)
     parsed = prompt_gpt.parse_response(result_text)
+    latest_result = parsed
     return parsed
 
 @app.get("/message/{recipe}/{step}")
@@ -43,3 +45,4 @@ async def get_latest():
     if latest_result is not None:
         return latest_result
     return {"error": "No result available yet"}
+
