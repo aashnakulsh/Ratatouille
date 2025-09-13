@@ -38,4 +38,8 @@ async def get_message(recipe: int, step: int):
     else:
         return {"error": "Step not found"}
 
-
+@app.get("/latest/")
+async def get_latest():
+    if latest_result is not None:
+        return latest_result
+    return {"error": "No result available yet"}
