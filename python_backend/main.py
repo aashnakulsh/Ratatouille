@@ -25,5 +25,17 @@ async def process_file(
     prompt = recipe.run_step(step)
     result_text = prompt_gpt.prompt_gpt(prompt, tmp_path)
     parsed = prompt_gpt.parse_response(result_text)
-    return {"result": parsed}
+    return parsed
+
+@app.get("/message/{recipe}/{step}")
+async def get_message(recipe: int, step: int):
+    if recipe == 0:
+        recipe = omlette
+    else:
+        recipe == pbj
+    if step in recipe.steps:
+        return {"recipe" : recipe.steps[step]['text']}
+    else:
+        return {"error": "Step not found"}
+
 

@@ -1,10 +1,11 @@
 import base64
 import openai
 from openai import OpenAI
+import os
 
-OPENAI_API_KEY = "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"
+openai_key = os.environ["OPENAI_API_KEY"]
 
-client = OpenAI(api_key = OPENAI_API_KEY)
+client = OpenAI(api_key = openai_key)
 
 def prompt_gpt(prompt, image_path):
     with open(image_path, "rb") as f:
@@ -21,33 +22,30 @@ def prompt_gpt(prompt, image_path):
             ]
         }]
     )
-    return (resp.output_text)
+    print(resp.output_text)
 
 def parse_response(response):
     resp = {}
+    resp_list = response.split("\n")
     
-    try: 
-        resp_list = response.split("\n")
-        if len(resp_list) != 3: raise ValueError("wrong!")
+    if len(resp_list) != 3: raise ValueError("wrong!")
 
-        #integer
-        rating = resp_list[0]
-        digit = "".join(filter(str.isdigit, rating))
+    #integer
+    rating = resp_list[0]
+    digit = "".join(filter(str.isdigit, rating))
 
-        if len(digit)<1: raise ValueError("wrong!")
+    if len(digit)<1: raise ValueError("wrong!")
 
-        digit = int(digit)
-        if digit > 5 or digit <1: raise ValueError("wrong rating!")
+    digit = int(digit)
+    if digit > 5 or digit <1: raise ValueError("wrong rating!")
 
-        resp["rating"] = digit
+    resp["rating"] = digit
 
-        #feedback:
-        if len(resp_list[1])<1: raise ValueError("wrong!")
-        if len(resp_list[2])<1: raise ValueError("wrong!")
+    #feedback:
+    if len(resp_list[1])<1: raise ValueError("wrong!")
+    if len(resp_list[2])<1: raise ValueError("wrong!")
 
-        resp["pos"] = resp_list[1]
-        resp["impr"] = resp_list[2]
-    #if GPT outputs garbage we can output a generic response
-    except:
-        resp = {"rating":3, "pos": "I can see you put in a good effort here", "impr": "I fear not even a rat would eat this"}
+    resp["pos"] = resp_list[1]
+    resp["impr"] = resp_list[2]
+
     return resp
