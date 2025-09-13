@@ -24,5 +24,6 @@ async def process_file(
         recipe = pbj
     prompt = recipe.run_step(step)
     result_text = prompt_gpt.prompt_gpt(prompt, tmp_path)
+    parsed = prompt_gpt.parse_response(result_text)
+    return {"result": parsed}
 
-    return {"result": result_text}
