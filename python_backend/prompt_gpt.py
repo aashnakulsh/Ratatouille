@@ -6,18 +6,45 @@ OPENAI_API_KEY = "sk-proj-cH9AFhpUIhSTpBpkkzYTlWJyCJA9PB11zjC8FXNVt2GBj5OdDzAU6-
 
 client = OpenAI(api_key = OPENAI_API_KEY)
 
-with open("/Users/maryzaher/rat/image.png", "rb") as f:
-    b64 = base64.b64encode(f.read()).decode("utf-8")
-data_url = f"data:image/jpeg;base64,{b64}"
+def prompt_gpt(prompt, image_path):
+    with open("image_path", "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("utf-8")
+    data_url = f"data:image/jpeg;base64,{b64}"
 
-resp = client.responses.create(
-    model="gpt-4o-mini",
-    input=[{
-        "role": "user",
-        "content": [
-            {"type": "input_text", "text": "Is the butter starting to brown?"},
-            {"type": "input_image", "image_url": data_url}
-        ]
-    }]
-)
-print(resp.output_text)
+    resp = client.responses.create(
+        model="gpt-4o-mini",
+        input=[{
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": prompt},
+                {"type": "input_image", "image_url": data_url}
+            ]
+        }]
+    )
+    print(resp.output_text)
+
+def parse_response(response):
+    resp = {}
+    resp_list = response.split("\n")
+    
+    if len(resp_list) != 3: raise ValueError("wrong!")
+
+    #integer
+    rating = resp_list[0]
+    digit = "".join(filter(str.isdigit, rating))
+
+    if len(digit)<1: raise ValueError("wrong!")
+
+    digit = int(digit)
+    if digit > 5 or digit <1: raise ValueError("wrong rating!")
+
+    resp["rating"] = digit
+
+    #feedback:
+    if len(resp_list[1])<1: raise ValueError("wrong!")
+    if len(resp_list[2])<1: raise ValueError("wrong!")
+
+    resp["pos"] = resp_list[1]
+    resp["impr"] = resp_list[2]
+
+    return resp
