@@ -7,7 +7,7 @@ OPENAI_API_KEY = "sk-proj-cH9AFhpUIhSTpBpkkzYTlWJyCJA9PB11zjC8FXNVt2GBj5OdDzAU6-
 client = OpenAI(api_key = OPENAI_API_KEY)
 
 def prompt_gpt(prompt, image_path):
-    with open("image_path", "rb") as f:
+    with open(image_path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode("utf-8")
     data_url = f"data:image/jpeg;base64,{b64}"
 
@@ -21,7 +21,7 @@ def prompt_gpt(prompt, image_path):
             ]
         }]
     )
-    print(resp.output_text)
+    return (resp.output_text)
 
 def parse_response(response):
     resp = {}
