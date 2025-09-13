@@ -1,0 +1,238 @@
+using UnityEngine;
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+using Unity.Services.Vivox;
+
+public class VivoxTTSManager : MonoBehaviour
+{
+    [Header("TTS Settings")]
+    public bool enableTTS = true;
+    public string displayName = "Player";
+    [Header("Voice Options")]
+    [Tooltip("Available voices: en_US male, en_US female")]
+    public string ttsVoice = "en_US female";
+    public bool useMaleVoice = false;
+    
+    [Header("Vivox Credentials (if needed)")]
+    public string server = "YOUR_VIVOX_SERVER_URL_HERE";
+    public string domain = "YOUR_VIVOX_DOMAIN_HERE";
+    public string tokenIssuer = "YOUR_VIVOX_TOKEN_ISSUER_HERE";
+    public string tokenKey = "YOUR_VIVOX_TOKEN_KEY_HERE";
+    
+    private bool isInitialized = false;
+    private AudioSource audioSource;
+    
+    async void Start()
+    {
+        await InitializeVivox();
+    }
+    
+    private async System.Threading.Tasks.Task InitializeVivox()
+    {
+        try
+        {
+            Debug.Log("VivoxTTSManager: Starting Vivox initialization...");
+            
+            // Get or add AudioSource component
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                Debug.Log("Added AudioSource component");
+            }
+            
+            // Initialize Unity Services
+            if (UnityServices.State != ServicesInitializationState.Initialized)
+            {
+                await UnityServices.InitializeAsync();
+                Debug.Log("Unity Services initialized");
+            }
+            
+            // Sign in anonymously
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                Debug.Log("Signed in anonymously");
+            }
+            
+            // Initialize Vivox
+            await VivoxService.Instance.InitializeAsync();
+            Debug.Log("Vivox service initialized");
+            
+            // Login with TTS enabled
+            LoginOptions options = new LoginOptions();
+            options.DisplayName = displayName;
+            options.EnableTTS = enableTTS;
+            await VivoxService.Instance.LoginAsync(options);
+            
+            Debug.Log($"Logged into Vivox with TTS enabled: {enableTTS}");
+            
+            // List available voices
+            Debug.Log("Available TTS voices:");
+            foreach (string voiceName in VivoxService.Instance.TextToSpeechAvailableVoices)
+            {
+                Debug.Log($"  - {voiceName}");
+            }
+            
+            Debug.Log($"Current TTS voice: {VivoxService.Instance.TextToSpeechCurrentVoice}");
+            
+            isInitialized = true;
+            Debug.Log("VivoxTTSManager: Initialization complete!");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to initialize Vivox TTS: {e.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Convert text to speech using Vivox TTS
+    /// </summary>
+    /// <param name="text">Text to convert to speech</param>
+    public void TextToSpeech(string text)
+    {
+        if (!isInitialized)
+        {
+            Debug.LogError("Vivox TTS not initialized. Cannot convert text to speech.");
+            return;
+        }
+        
+        if (string.IsNullOrEmpty(text))
+        {
+            Debug.LogWarning("Text is empty or null. Cannot convert to speech.");
+            return;
+        }
+        
+        try
+        {
+            // Use Vivox TTS to speak the text locally
+            VivoxService.Instance.TextToSpeechSendMessage(text, TextToSpeechMessageType.QueuedLocalPlayback);
+            Debug.Log($"TTS Message sent: {text}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to send TTS message: {e.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Stop all current TTS playback
+    /// </summary>
+    public void StopTTS()
+    {
+        if (!isInitialized)
+        {
+            Debug.LogWarning("Vivox TTS not initialized.");
+            return;
+        }
+        
+        try
+        {
+            VivoxService.Instance.TextToSpeechCancelAllMessages();
+            Debug.Log("All TTS messages cancelled");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to cancel TTS messages: {e.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Check if TTS is currently speaking
+    /// </summary>
+    public bool IsSpeaking()
+    {
+        if (!isInitialized)
+            return false;
+            
+        try
+        {
+            // Check if TTS is currently playing (simplified check)
+            return false; // Note: Real implementation would require tracking TTS message state
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to check TTS speaking status: {e.Message}");
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Set the TTS voice
+    /// </summary>
+    public void SetVoice(string voice)
+    {
+        if (!isInitialized)
+        {
+            Debug.LogWarning("Vivox TTS not initialized.");
+            return;
+        }
+        
+        try
+        {
+            VivoxService.Instance.TextToSpeechSetVoice(voice);
+            ttsVoice = voice;
+            Debug.Log($"TTS Voice set to: {voice}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to set TTS voice: {e.Message}");
+        }
+    }
+    
+    /// <summary>
+    /// Set the TTS destination
+    /// </summary>
+    public void SetDestination(string destination)
+    {
+        // Note: Destination is set per message in Vivox, not globally
+        Debug.Log($"TTS Destination preference set to: {destination}");
+        Debug.Log("Note: Vivox sets destination per message, not globally");
+    }
+    
+    private async void OnDestroy()
+    {
+        if (isInitialized)
+        {
+            try
+            {
+                Debug.Log("VivoxTTSManager: Cleaning up Vivox services...");
+                VivoxService.Instance.TextToSpeechCancelAllMessages();
+                await VivoxService.Instance.LogoutAsync();
+                Debug.Log("VivoxTTSManager: Cleanup complete");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error during Vivox cleanup: {e.Message}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Toggle between male and female voice
+    /// </summary>
+    public void ToggleVoice()
+    {
+        useMaleVoice = !useMaleVoice;
+        string newVoice = useMaleVoice ? "en_US male" : "en_US female";
+        SetVoice(newVoice);
+    }
+    
+    /// <summary>
+    /// Set to male voice
+    /// </summary>
+    public void SetMaleVoice()
+    {
+        useMaleVoice = true;
+        SetVoice("en_US male");
+    }
+    
+    /// <summary>
+    /// Set to female voice
+    /// </summary>
+    public void SetFemaleVoice()
+    {
+        useMaleVoice = false;
+        SetVoice("en_US female");
+    }
+}
