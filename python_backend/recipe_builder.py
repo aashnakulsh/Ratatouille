@@ -68,4 +68,22 @@ def build_omlette():
     return omlette
 
 def build_pbj():
+    steps = { 1: {"id": "Prep bread", "text":"Lay two slices of bread on a plate.","visual_cues": "Bread is even. Slices are of similar shape and size."},
+             2:{"id":"Spread peanut butter", "text": "Spread peanut butter evenly on one slice.", "visual_cues": "Peanut butter is spread evenly on ONE side of the bread. Covers entire side."},
+             3:{"id": "Spread jelly", "text":"Spread jelly or jam on the other slice.", "visual_cues": "Peanut butter is spread evenly on ONE side of the bread. Covers entire side."},
+             4:{"id": "Put it together", "text":"Join the two slices together to form a sandwich.", "visual_cues": "No spillage from the sides. Slices allign."},
+             5:{"id": "Cut in half", "text":"Cut in half", "visual_cues": "Halves are even. Cut is DIAGONAL."}}
     
+    weights = [10,20,20,30,20]
+
+    pbj = Recipe(steps, weights)
+    return pbj
+
+def build_recipe(type):
+    if type == 0: 
+        return build_omlette()
+    else: 
+        return build_pbj()
+    
+
+
