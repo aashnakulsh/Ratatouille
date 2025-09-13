@@ -22,7 +22,7 @@ def prompt_gpt(prompt, image_path):
             ]
         }]
     )
-    print(resp.output_text)
+    return resp.output_text
 
 def parse_response(response):
     resp = {}
